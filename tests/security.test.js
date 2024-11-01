@@ -34,7 +34,6 @@ describe("Security Features", () => {
 	});
 
 	describe("Security Middleware", () => {
-
 		test("rate limiter should work", async () => {
 			const attempts = [];
 			for (let i = 0; i < 6; i++) {
@@ -53,7 +52,6 @@ describe("Security Features", () => {
 	});
 
 	describe("Authentication", () => {
-
 		test("should reject expired tokens", async () => {
 			const expiredToken = jwt.sign(
 				{ id: testUser._id },
@@ -89,7 +87,6 @@ describe("Security Features", () => {
 		});
 	});
 
-	
 	describe("Error Handling", () => {
 		test("should handle invalid JSON", async () => {
 			const response = await request(app)

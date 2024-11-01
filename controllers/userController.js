@@ -1,14 +1,6 @@
-const User = require("../models/User")
-const generateToken = require("../utils/jwt"); // Add this line
+const User = require("../models/User");
+const generateToken = require("../utils/jwt"); // Updated import path
 const bcrypt = require("bcryptjs");
-
-
-
-
-
-
-
-
 
 exports.createUser = async (req, res) => {
 	const { username, password, isAdmin } = req.body;
@@ -27,50 +19,38 @@ exports.createUser = async (req, res) => {
 	}
 };
 
-
-
 // Get all users
 
-exports.getAllUsers = async (req,res) => {
-    try{
-        const users = await User.find().select("-password");
-        res.json(users)
-		console.log(users)
-
-    } catch(err) {
-        res.status(500).json({
+exports.getAllUsers = async (req, res) => {
+	try {
+		const users = await User.find().select("-password");
+		res.json(users);
+		console.log(users);
+	} catch (err) {
+		res.status(500).json({
 			msg: "Error fetching users",
 			error: err.message,
 		});
-    }
-}
-
-
-
+	}
+};
 
 // Get single user
 
-
-exports.getUser = async(req, res) => {
-     try {
-			const user = await User.findById(req.params.id).select("-password");
-			if (!user) return res.status(404).json({ msg: "User not found" });
-			res.json(user);
-			console.log(user)
-		} catch (err) {
-			res.status(500).json({
-				msg: "Error fetching user",
-				error: err.message,
-			});
-		}
+exports.getUser = async (req, res) => {
+	try {
+		const user = await User.findById(req.params.id).select("-password");
+		if (!user) return res.status(404).json({ msg: "User not found" });
+		res.json(user);
+		console.log(user);
+	} catch (err) {
+		res.status(500).json({
+			msg: "Error fetching user",
+			error: err.message,
+		});
+	}
 };
 
-
-
-
-
 // Update user
-
 
 exports.updateUser = async (req, res) => {
 	try {
@@ -92,7 +72,7 @@ exports.updateUser = async (req, res) => {
 		}
 
 		res.json(updatedUser);
-		console.log(updatedUser)
+		console.log(updatedUser);
 	} catch (err) {
 		res.status(500).json({
 			msg: "Error updating user",
@@ -101,24 +81,21 @@ exports.updateUser = async (req, res) => {
 	}
 };
 
-
 // Delete user
 
-
-
 exports.deleteUser = async (req, res) => {
-    try {
-        const user = await User.findByIdAndDelete(req.params.id);
-        if (!user) return res.status(404).json({ msg: 'User not found' });
-        res.json({ msg: 'User deleted' });
-		console.log(`user ${user} deleted`)
-    } catch (err) {
-        res.status(500).json({ msg: 'Error deleting user', error: err.message });
-    }
+	try {
+		const user = await User.findByIdAndDelete(req.params.id);
+		if (!user) return res.status(404).json({ msg: "User not found" });
+		res.json({ msg: "User deleted" });
+		console.log(`user ${user} deleted`);
+	} catch (err) {
+		res.status(500).json({
+			msg: "Error deleting user",
+			error: err.message,
+		});
+	}
 };
-
-
-
 
 //login User
 
@@ -126,23 +103,45 @@ exports.loginUser = async (req, res) => {
 	const { username, password } = req.body;
 
 	try {
-		const user = await User.findOne({ username });
+		// Find user with password field included
+		const user = await User.findOne({ username }).select("+password");
 
-		if (!user || !(await user.matchPassword(password))) {
-			return res
-				.status(401)
-				.json({ msg: "Invalid username or password" });
+		if (!user) {
+			return res.status(401).json({
+				success: false,
+				msg: "Invalid username or password",
+			});
 		}
 
+		// Use bcrypt directly for password comparison
+		const isMatch = await bcrypt.compare(password, user.password);
+
+		if (!isMatch) {
+			return res.status(401).json({
+				success: false,
+				msg: "Invalid username or password",
+			});
+		}
+
+		// Generate token
 		const token = generateToken(user._id);
-		res.json({ token });
-		
-			
+
+		// Return success response
+		res.json({
+			success: true,
+			token,
+			user: {
+				_id: user._id,
+				username: user.username,
+				isAdmin: user.isAdmin,
+			},
+		});
 	} catch (err) {
+		console.error("Login error:", err);
 		res.status(500).json({
+			success: false,
 			msg: "Error logging in",
 			error: err.message,
 		});
 	}
 };
-
